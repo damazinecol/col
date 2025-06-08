@@ -1,0 +1,62 @@
+[
+    {
+        "title": "النتائج",
+        "icon": "fas fa-chart-bar",
+        "link": "https://yourwebsite.com/results"
+    },
+    {
+        "title": "الجداول",
+        "icon": "fas fa-table",
+        "link": "https://yourwebsite.com/schedules"
+    },
+    {
+        "title": "مواعيد المحاضرات",
+        "icon": "fas fa-calendar-alt",
+        "link": "https://yourwebsite.com/lectures"
+    },
+    {
+        "title": "التقويم الأكاديمي",
+        "icon": "fas fa-calendar",
+        "link": "https://yourwebsite.com/calendar"
+    },
+    {
+        "title": "مواعيد الامتحانات",
+        "icon": "fas fa-clipboard-list",
+        "link": "https://yourwebsite.com/exams"
+    },
+    {
+        "title": "التسجيل الإلكتروني",
+        "icon": "fas fa-user-plus",
+        "link": "https://yourwebsite.com/registration"
+    },
+    {
+        "title": "الشكاوي والاقتراحات",
+        "icon": "fas fa-comment-alt",
+        "link": "https://yourwebsite.com/complaints"
+    },
+    {
+        "title": "المكتبة الإلكترونية",
+        "icon": "fas fa-book",
+        "link": "https://yourwebsite.com/library"
+    },
+    {
+        "title": "الأنشطة الطلابية",
+        "icon": "fas fa-users",
+        "link": "https://yourwebsite.com/activities"
+    },
+    {
+        "title": "نظام الدفع الإلكتروني",
+        "icon": "fas fa-credit-card",
+        "link": "https://yourwebsite.com/payment"
+    },
+    {
+        "title": "التواصل",
+        "icon": "fas fa-phone-alt",
+        "link": "#contact"
+    },
+    {
+        "title": "الموقع الفعلي",
+        "icon": "fas fa-map-marker-alt",
+        "link": "https://maps.google.com/?q=COLLEGE_LOCATION"
+    }
+]
