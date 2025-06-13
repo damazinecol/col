@@ -1,7 +1,7 @@
 {
-  "status": "updating",
+  "status": "disabled",
   "message": "التطبيق يعمل بشكل طبيعي",
-  "downloadUrl": "",
+  "downloadUrl": "https://google.com",
   "lastUpdated": "2023-11-20T12:00:00Z",
   "version": "1.0.0",
   "forceUpdate": true
