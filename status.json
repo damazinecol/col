@@ -1,7 +1,7 @@
 {
   "status": "disabled",
-  "message": "التطبيق يعمل بشكل طبيعي",
-  "downloadUrl": "http://192.168.43.67/",
+  "message": "التطبيق معطل، الرجاء تحميل الإصدار الجديد",
+  "downloadUrl": "https://your-update-url.com",
   "lastUpdated": "2023-11-20T12:00:00Z",
   "version": "1.0.0",
   "forceUpdate": true
