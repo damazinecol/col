@@ -1,10 +1,10 @@
 {
-  "status": "disabled",
+  "status": "normal",
   "message": "التطبيق معطل حاليًا، الرجاء تحميل الإصدار الجديد من المتجر",
   "downloadUrl": "https://pool.apk.aptoide.com/aptoide-web/cm-aptoide-pt-12058-70501565-8e2b75f538c5f4d73a7bd621a3e9ad71.apk",
   "lastUpdated": "2024-06-18T14:30:00Z",
   "version": "2.0.0",
-  "forceUpdate": true,
+  "forceUpdate": false,
   "metadata": {
     "maintenance": {
       "startTime": "2024-06-18T00:00:00Z",
