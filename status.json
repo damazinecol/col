@@ -1,8 +1,26 @@
 {
   "status": "disabled",
-  "message": "التطبيق معطل، الرجاء تحميل الإصدار الجديد",
-  "downloadUrl": "https://pool.apk.aptoide.com/aptoide-web/cm-aptoide-pt-12058-70501565-8e2b75f538c5f4d73a7bd621a3e9ad71.apk",
-  "lastUpdated": "2023-11-20T12:00:00Z",
-  "version": "1.0.0",
-  "forceUpdate": true
+  "message": "التطبيق معطل حاليًا، الرجاء تحميل الإصدار الجديد من المتجر",
+  "downloadUrl": "https://play.google.com/store/apps/details?id=com.damazinecollege.app",
+  "lastUpdated": "2024-06-18T14:30:00Z",
+  "version": "2.0.0",
+  "forceUpdate": true,
+  "metadata": {
+    "maintenance": {
+      "startTime": "2024-06-18T00:00:00Z",
+      "endTime": "2024-06-20T00:00:00Z",
+      "reason": "تحديث النظام الأساسي"
+    },
+    "notifications": [
+      {
+        "title": "إشعار مهم",
+        "message": "سيتم إيقاف النسخة الحالية من التطبيق خلال 24 ساعة",
+        "priority": "high"
+      }
+    ]
+  },
+  "supportedVersions": {
+    "minimum": "1.5.0",
+    "recommended": "2.0.0"
+  }
 }
