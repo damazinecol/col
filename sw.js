@@ -1,158 +1,144 @@
-// Service Worker for App Status Control - Full Version
+// Service Worker with Complete CORS Fixes
 // File: /col/sw.js
-// Version: 3.0
-// Last Updated: 2024-06-20
-
-const CACHE_NAME = 'app-status-cache-v3';
+// Version: 4.2
+const CACHE_NAME = 'app-status-cache-v4';
 const STATUS_URL = 'https://damazinecol.github.io/col/status.json';
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes cache validity
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 const FALLBACK_RESPONSE = JSON.stringify({
   status: 'normal',
   message: 'التطبيق يعمل بشكل طبيعي',
   lastUpdated: new Date().toISOString()
 });
 
-// Install the service worker with enhanced caching
+// Enhanced Install Event
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing service worker');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('[Service Worker] Cache opened during install');
-        
-        // Pre-cache with network-first strategy
-        return fetch(STATUS_URL, {
-          cache: 'no-store',
-          headers: {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache'
+        console.log('[SW] Cache opened during install');
+        return cache.put(STATUS_URL, new Response(FALLBACK_RESPONSE, {
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Cache-Status': 'fallback'
           }
-        })
-        .then(networkResponse => {
-          if (networkResponse.ok) {
-            console.log('[Service Worker] Successfully fetched status during install');
-            return cache.put(STATUS_URL, networkResponse.clone());
-          }
-          throw new Error('Network response not OK');
-        })
-        .catch(error => {
-          console.log('[Service Worker] Install fetch failed, caching fallback:', error);
-          return cache.put(STATUS_URL, new Response(FALLBACK_RESPONSE, {
-            headers: { 'Content-Type': 'application/json' }
-          }));
-        });
+        }));
       })
       .catch(error => {
-        console.error('[Service Worker] Cache opening failed:', error);
+        console.error('[SW] Cache installation failed:', error);
       })
   );
+  self.skipWaiting(); // Force active immediately
 });
 
-// Enhanced fetch handling with multiple fallbacks
+// Robust Fetch Handling with CORS Workarounds
 self.addEventListener('fetch', (event) => {
-  // Only intercept requests for our status file
   if (event.request.url.includes('status.json')) {
+    console.log('[SW] Intercepting status request');
     event.respondWith(
       (async () => {
         const cache = await caches.open(CACHE_NAME);
-        const cacheMatch = await cache.match(STATUS_URL);
         
-        // Network-first strategy with cache fallback
+        // Strategy: Cache First with Background Update
         try {
-          // Try to fetch from network
-          const networkResponse = await fetch(`${STATUS_URL}?t=${Date.now()}`, {
-            cache: 'no-store',
-            headers: {
-              'Accept': 'application/json',
-              'Cache-Control': 'no-cache'
-            }
-          });
-
-          // Validate response
-          if (!networkResponse.ok) {
-            throw new Error(`HTTP error! status: ${networkResponse.status}`);
-          }
-
-          // Clone the response to store in cache
-          const responseClone = networkResponse.clone();
-          
-          // Update cache with fresh response
-          await cache.put(STATUS_URL, responseClone);
-          console.log('[Service Worker] Served fresh network response');
-          
-          return networkResponse;
-        } catch (networkError) {
-          console.log('[Service Worker] Network request failed, trying cache:', networkError);
-          
-          // Try to get from cache if available
-          if (cacheMatch) {
-            const cachedData = await cacheMatch.clone().json();
+          // 1. Return cached response immediately if valid
+          const cachedResponse = await cache.match(STATUS_URL);
+          if (cachedResponse) {
+            const cachedData = await cachedResponse.clone().json();
             const cachedTime = new Date(cachedData.lastUpdated).getTime();
             
-            // Check if cached data is still valid
             if (Date.now() - cachedTime < CACHE_TTL) {
-              console.log('[Service Worker] Serving valid cached response');
-              return cacheMatch;
+              console.log('[SW] Serving valid cached response');
+              return cachedResponse;
             }
           }
+
+          // 2. Try to fetch fresh data (with CORS workaround)
+          let networkResponse;
+          try {
+            networkResponse = await fetch(`${STATUS_URL}?t=${Date.now()}`, {
+              mode: 'no-cors',
+              cache: 'no-store',
+              credentials: 'omit'
+            });
+
+            // Handle opaque responses (no-cors mode)
+            if (networkResponse.type === 'opaque') {
+              console.log('[SW] Received opaque response, using as fallback');
+              // Update cache in background
+              cache.put(STATUS_URL, networkResponse.clone())
+                .catch(e => console.log('[SW] Cache update failed:', e));
+              return networkResponse;
+            }
+
+            if (networkResponse.ok) {
+              console.log('[SW] Received valid network response');
+              const responseClone = networkResponse.clone();
+              await cache.put(STATUS_URL, responseClone);
+              return networkResponse;
+            }
+          } catch (networkError) {
+            console.log('[SW] Network fetch failed:', networkError);
+          }
+
+          // 3. Final fallback to cached or hardcoded response
+          if (cachedResponse) {
+            console.log('[SW] Falling back to cached response');
+            return cachedResponse;
+          }
           
-          // Ultimate fallback
-          console.log('[Service Worker] Serving fallback response');
+          console.log('[SW] Using hardcoded fallback');
+          return new Response(FALLBACK_RESPONSE, {
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+        } catch (error) {
+          console.error('[SW] Fetch handler error:', error);
           return new Response(FALLBACK_RESPONSE, {
             headers: { 'Content-Type': 'application/json' }
           });
         }
       })()
     );
-    return;
   }
   
-  // For all other requests, use default network behavior
-  return fetch(event.request);
+  // For all other requests, use network first
+  event.respondWith(fetch(event.request));
 });
 
-// Handle messages from the app for manual updates
+// Enhanced Message Handling
 self.addEventListener('message', (event) => {
   if (event.data.type === 'UPDATE_STATUS') {
-    console.log('[Service Worker] Received manual update request');
-    
+    console.log('[SW] Received manual update request');
     event.waitUntil(
       (async () => {
         try {
-          // Force update check
-          const response = await fetch(`${STATUS_URL}?t=${Date.now()}`, {
-            cache: 'no-store',
-            headers: {
-              'Accept': 'application/json',
-              'Cache-Control': 'no-cache'
-            }
-          });
-          
-          if (!response.ok) throw new Error('Update fetch failed');
-          
-          const data = await response.json();
           const cache = await caches.open(CACHE_NAME);
+          const response = await fetch(`${STATUS_URL}?t=${Date.now()}`, {
+            mode: 'no-cors',
+            cache: 'no-store'
+          });
+
+          // Even if opaque, try to update cache
           await cache.put(STATUS_URL, response.clone());
           
-          // Notify all clients
           const clients = await self.clients.matchAll();
           clients.forEach(client => {
             client.postMessage({
               type: 'STATUS_UPDATED',
-              data: data,
+              success: true,
               timestamp: Date.now()
             });
           });
-          
-          event.source.postMessage({
-            type: 'UPDATE_COMPLETE',
-            success: true
-          });
         } catch (error) {
-          console.error('[Service Worker] Manual update failed:', error);
-          event.source.postMessage({
-            type: 'UPDATE_COMPLETE',
-            success: false,
-            error: error.message
+          console.error('[SW] Manual update failed:', error);
+          const clients = await self.clients.matchAll();
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'STATUS_UPDATED',
+              success: false,
+              error: error.message
+            });
           });
         }
       })()
@@ -160,94 +146,66 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Clean up old caches during activation
+// Cache Cleanup on Activation
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activated');
-  
+  console.log('[SW] Activating new service worker');
   event.waitUntil(
     (async () => {
+      await self.clients.claim();
+      console.log('[SW] Clients claimed');
+      
       // Clean old caches
       const cacheKeys = await caches.keys();
       await Promise.all(
         cacheKeys.map(key => {
           if (key !== CACHE_NAME) {
-            console.log(`[Service Worker] Deleting old cache: ${key}`);
+            console.log(`[SW] Deleting old cache: ${key}`);
             return caches.delete(key);
           }
         })
       );
-      
-      // Immediately claim clients
-      await self.clients.claim();
-      console.log('[Service Worker] Clients claimed');
     })()
   );
 });
 
-// Background sync for periodic updates
+// Background Sync for Updates
 self.addEventListener('sync', (event) => {
   if (event.tag === 'status-sync') {
-    console.log('[Service Worker] Background sync triggered');
-    
+    console.log('[SW] Background sync triggered');
     event.waitUntil(
       (async () => {
+        const cache = await caches.open(CACHE_NAME);
         try {
           const response = await fetch(STATUS_URL, {
-            cache: 'no-store',
-            headers: {
-              'Accept': 'application/json',
-              'Cache-Control': 'no-cache'
-            }
+            mode: 'no-cors',
+            cache: 'no-store'
           });
-          
-          if (!response.ok) throw new Error('Sync fetch failed');
-          
-          const data = await response.json();
-          const cache = await caches.open(CACHE_NAME);
           await cache.put(STATUS_URL, response.clone());
-          
-          // Notify all clients
-          const clients = await self.clients.matchAll();
-          clients.forEach(client => {
-            client.postMessage({
-              type: 'BACKGROUND_UPDATE',
-              data: data,
-              timestamp: Date.now()
-            });
-          });
-          
-          console.log('[Service Worker] Background sync completed successfully');
+          console.log('[SW] Background sync completed');
         } catch (error) {
-          console.error('[Service Worker] Background sync failed:', error);
+          console.error('[SW] Background sync failed:', error);
         }
       })()
     );
   }
 });
 
-// Periodic update check (every 6 hours)
+// Periodic Sync (for browsers that support it)
 self.addEventListener('periodicsync', (event) => {
   if (event.tag === 'periodic-status-update') {
-    console.log('[Service Worker] Periodic update check');
+    console.log('[SW] Periodic update check');
     event.waitUntil(
-      fetch(STATUS_URL, {
-        cache: 'no-store',
-        headers: {
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        try {
+          const response = await fetch(`${STATUS_URL}?t=${Date.now()}`, {
+            mode: 'no-cors'
+          });
+          await cache.put(STATUS_URL, response.clone());
+        } catch (error) {
+          console.log('[SW] Periodic update failed:', error);
         }
-      })
-      .then(response => {
-        if (!response.ok) throw new Error('Periodic fetch failed');
-        return response.json();
-      })
-      .then(data => {
-        return caches.open(CACHE_NAME)
-          .then(cache => cache.put(STATUS_URL, new Response(JSON.stringify(data))));
-      })
-      .catch(error => {
-        console.error('[Service Worker] Periodic update failed:', error);
-      })
+      })()
     );
   }
 });
